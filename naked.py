@@ -1,3 +1,4 @@
+# importe nepieciesamo: requests-pieprasījumu veikšana API, json-atbildes parsēšanai/lasīšanai, datetime/time-laika ģenerēšanai, yaml-žurnalēšanas conf nolasīšanai
 import requests
 import json
 import datetime
@@ -10,7 +11,7 @@ print('Asteroid processing service')
 # Initiating and reading config values
 print('Loading configuration from file')
 
-# 
+# Dati API pieprasījumam NASA
 nasa_api_key = "7TCfU5lD8BMaXLPwExD7K01J31E7n8C1fCCrWvCm"
 nasa_api_url = "https://api.nasa.gov/neo/"
 
@@ -28,20 +29,23 @@ print("Response status code: " + str(r.status_code))
 print("Response headers: " + str(r.headers))
 print("Response content: " + str(r.text))
 
+# Pārbauda, vai pieprasījums ir bijis veiksmīgs (HTTP pieprasījuma kods)
 if r.status_code == 200:
-
+	# Dati tiek parsēti JSON formātā
 	json_data = json.loads(r.text)
-
+	# Inicializē 2 vietējos masīvus
 	ast_safe = []
 	ast_hazardous = []
-
+	# Pārbauda, vai elements eksistē saņemtajā atbildē
 	if 'element_count' in json_data:
 		ast_count = int(json_data['element_count'])
 		print("Asteroid count today: " + str(ast_count))
-
+		# Ja asteroīdi eksistē, tos sāk apstrādāt
 		if ast_count > 0:
 			for val in json_data['near_earth_objects'][request_date]:
+				# Pārbauda, vai ir pieejami dati par asteroīdu
 				if 'name' and 'nasa_jpl_url' and 'estimated_diameter' and 'is_potentially_hazardous_asteroid' and 'close_approach_data' in val:
+					# Ievieto asteroīda datus īslaicīgajos mainīgajos, ja dati eksistē, citādāk piešķir noklusējuma vērtības 
 					tmp_ast_name = val['name']
 					tmp_ast_nasa_jpl_url = val['nasa_jpl_url']
 					if 'kilometers' in val['estimated_diameter']:
@@ -54,7 +58,7 @@ if r.status_code == 200:
 					else:
 						tmp_ast_diam_min = -1
 						tmp_ast_diam_max = -1
-
+					
 					tmp_ast_hazardous = val['is_potentially_hazardous_asteroid']
 
 					if len(val['close_approach_data']) > 0:
@@ -72,11 +76,13 @@ if r.status_code == 200:
 								tmp_ast_miss_dist = round(float(val['close_approach_data'][0]['miss_distance']['kilometers']), 3)
 							else:
 								tmp_ast_miss_dist = -1
-						else:
+						else:	
+							# Piešķir noklusējuma vērtību, ja dati nav pieejami
 							tmp_ast_close_appr_ts = -1
 							tmp_ast_close_appr_dt_utc = "1969-12-31 23:59:59"
 							tmp_ast_close_appr_dt = "1969-12-31 23:59:59"
 					else:
+						# Piešķir noklusējuma vērtību, ja dati nav pieejami
 						print("No close approach data in message")
 						tmp_ast_close_appr_ts = 0
 						tmp_ast_close_appr_dt_utc = "1970-01-01 00:00:00"
@@ -84,6 +90,7 @@ if r.status_code == 200:
 						tmp_ast_speed = -1
 						tmp_ast_miss_dist = -1
 
+					# Izprintē visu informāciju par visiem asteroīdiem dienā
 					print("------------------------------------------------------- >>")
 					print("Asteroid name: " + str(tmp_ast_name) + " | INFO: " + str(tmp_ast_nasa_jpl_url) + " | Diameter: " + str(tmp_ast_diam_min) + " - " + str(tmp_ast_diam_max) + " km | Hazardous: " + str(tmp_ast_hazardous))
 					print("Close approach TS: " + str(tmp_ast_close_appr_ts) + " | Date/time UTC TZ: " + str(tmp_ast_close_appr_dt_utc) + " | Local TZ: " + str(tmp_ast_close_appr_dt))
@@ -95,23 +102,27 @@ if r.status_code == 200:
 					else:
 						ast_safe.append([tmp_ast_name, tmp_ast_nasa_jpl_url, tmp_ast_diam_min, tmp_ast_diam_max, tmp_ast_close_appr_ts, tmp_ast_close_appr_dt_utc, tmp_ast_close_appr_dt, tmp_ast_speed, tmp_ast_miss_dist])
 
-		else:
+		else:	
+			# Izprintē paziņojumus, ja nav asteroīdu
 			print("No asteroids are going to hit earth today")
-
+	# Izprintē bīstamo un drošo asteroīdu skaitu
 	print("Hazardous asteorids: " + str(len(ast_hazardous)) + " | Safe asteroids: " + str(len(ast_safe)))
-
+	# Pārbauda, vai ir bīstamie asteroīdi
 	if len(ast_hazardous) > 0:
-
+		# Sakārto bīstamos asteroīdus pēc laika, kad tie pietuvosies zemei (no ātrākā uz vēlāko)
 		ast_hazardous.sort(key = lambda x: x[4], reverse=False)
-
+		# IZprintē asteroīdus, kas ir bīstami
 		print("Today's possible apocalypse (asteroid impact on earth) times:")
 		for asteroid in ast_hazardous:
 			print(str(asteroid[6]) + " " + str(asteroid[0]) + " " + " | more info: " + str(asteroid[1]))
-
+		# Sakārto asteroīdus pēc attāluma no Zemes, kad tie lidos garām
 		ast_hazardous.sort(key = lambda x: x[8], reverse=False)
+		# Izprintē asteroīdus pēc attāluma no Zemes
 		print("Closest passing distance is for: " + str(ast_hazardous[0][0]) + " at: " + str(int(ast_hazardous[0][8])) + " km | more info: " + str(ast_hazardous[0][1]))
-	else:
+	else:	
+		# Izprintē paziņojumu, ja nav asteroīdu
 		print("No asteroids close passing earth today")
 
-else:
+else:	
+	# Izprintē paziņojumu, ja nav izdevies iegūt datus no NASA + HTTPS statusa kodu un tekstu
 	print("Unable to get response from API. Response code: " + str(r.status_code) + " | content: " + str(r.text))
