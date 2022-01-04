@@ -6,14 +6,23 @@ import time
 import yaml
 
 from datetime import datetime
+from configparser import ConfigParser
 print('Asteroid processing service')
 
 # Initiating and reading config values
 print('Loading configuration from file')
 
-# Dati API pieprasījumam NASA
-nasa_api_key = "7TCfU5lD8BMaXLPwExD7K01J31E7n8C1fCCrWvCm"
-nasa_api_url = "https://api.nasa.gov/neo/"
+# Paņem datus no config.ini faila
+try:
+    config = ConfigParser()
+    config.read('config.ini')
+
+    nasa_api_key = config.get('nasa', 'api_key')
+    nasa_api_url = config.get('nasa', 'api_url')
+except:
+        logger.exception('')
+print('DONE')
+
 
 # Getting todays date
 dt = datetime.now()
