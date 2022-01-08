@@ -1,3 +1,4 @@
+#izmaiņas eksāmenam
 # importe nepieciesamo: requests-pieprasījumu veikšana API, json-atbildes parsēšanai/lasīšanai, datetime/time-laika ģenerēšanai, yaml-žurnalēšanas conf nolasīšanai, logging - žurnalēšana
 import requests
 import json
